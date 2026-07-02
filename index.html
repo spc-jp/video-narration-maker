@@ -71,6 +71,7 @@
             color: #234E52;
         }
 
+        /* 有効なコピーボタン */
         .clay-btn-secondary {
             background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%);
             color: white;
@@ -85,6 +86,16 @@
             box-shadow: 
                 inset 2px 2px 4px rgba(255, 255, 255, 0.4),
                 0 3px 6px rgba(96, 165, 250, 0.3);
+        }
+
+        /* ロックされた無効化コピーボタン */
+        .clay-btn-disabled {
+            background: linear-gradient(135deg, #FDA4AF 0%, #F43F5E 100%) !important;
+            color: white !important;
+            border-radius: 20px;
+            box-shadow: 0 4px 8px rgba(244, 63, 94, 0.2) !important;
+            cursor: not-allowed;
+            opacity: 0.8;
         }
 
         /* ふわふわ浮かぶアニメーション */
@@ -130,7 +141,7 @@
             <span class="floating-icon text-3xl">🎤</span>
             ショート動画ナレーションメーカー
         </h1>
-        <p class="text-xs md:text-sm text-slate-500 mt-1">15秒・30秒・45秒や、女性・男性の切り替えにも完璧に対応した最新版ツールです✨</p>
+        <p class="text-xs md:text-sm text-slate-500 mt-1">15秒・30秒・45秒や、女性・男性の切り替えに完璧に対応。厳格な文字数チェック機能付き！✨</p>
     </header>
 
     <!-- メインコンテンツ -->
@@ -221,13 +232,17 @@
                     <div id="gaugeBar" class="h-full bg-emerald-400" style="width: 0%;"></div>
                 </div>
                 
-                <p id="feedbackText" class="text-xs text-slate-400 mb-2">※秒数に合わせて目標文字数が自動で切り替わります！</p>
+                <p id="feedbackText" class="text-xs text-slate-400 mb-2 font-bold">※秒数に合わせて目標文字数が自動で切り替わります！</p>
+                <div id="warningBanner" class="hidden text-xs bg-rose-100 text-rose-700 p-3 rounded-xl font-bold mb-2">
+                    ⚠️ 文字制限を超過しています！コピーできません。左側の入力情報を少し短く調整してください。
+                </div>
             </div>
 
             <!-- 結果表示エリア -->
             <textarea id="outputArea" class="w-full flex-1 p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-blue-300 leading-relaxed resize-none" readonly></textarea>
 
-            <button onclick="copyToClipboard()" class="w-full py-3 text-sm font-bold clay-btn-secondary mt-2 flex items-center justify-center gap-2">
+            <!-- コピーボタン -->
+            <button onclick="copyToClipboard()" id="copyBtn" class="w-full py-3 text-sm font-bold clay-btn-secondary mt-2 flex items-center justify-center gap-2">
                 <span>📋</span> 台本をコピーする
             </button>
         </div>
@@ -251,7 +266,7 @@
         let currentGender = 'female'; // 'female', 'male'
         let currentTone = 'friendly'; // 'friendly', 'business', 'active'
 
-        // トークメッセージを表示する可愛いポップアップ関数（alert排除のため）
+        // トークメッセージを表示する可愛いポップアップ関数
         function showToast(message, isError = false) {
             const toast = document.getElementById('customToast');
             toast.innerText = message;
@@ -296,89 +311,21 @@
         }
 
         function buildNarration() {
-            const appName = document.getElementById('appName').value.trim() || '〇〇';
-            const target = document.getElementById('target').value.trim() || 'お仕事に追われるあなた';
-            const feature = document.getElementById('feature').value.trim() || 'とにかく素早く解決するから';
+            let appName = document.getElementById('appName').value.trim() || '〇〇';
+            let target = document.getElementById('target').value.trim() || 'お仕事に追われるあなた';
+            let feature = document.getElementById('feature').value.trim() || 'とにかく素早く解決するから';
+            
             const outputArea = document.getElementById('outputArea');
             const charCount = document.getElementById('charCount');
             const gaugeBar = document.getElementById('gaugeBar');
             const feedbackText = document.getElementById('feedbackText');
+            const warningBanner = document.getElementById('warningBanner');
+            const copyBtn = document.getElementById('copyBtn');
 
             // 入力データの文末を自然な接続語に最適化する
             let cleanFeature = feature.replace(/[だから|から|ので]+$/, "");
 
-            let script = "";
-
-            // --- 18パターンの条件分岐テンプレート ---
-
-            if (currentDuration === 15) {
-                // 【15秒動画：文字数目安 70〜95文字】
-                if (currentGender === 'female') {
-                    if (currentTone === 'friendly') {
-                        script = `${target}へ！\n手入力はもう卒業しませんか？\n新アプリ「${appName}」なら、${cleanFeature}、投げるだけでAIが自動抽出します！\n面倒をなくして効率化！今すぐ試してみてね！`;
-                    } else if (currentTone === 'business') {
-                        script = `${target}の皆様へ。\n毎日の非効率な転記作業、まだ手入力していませんか？\n「${appName}」なら、${cleanFeature}、データを送るだけで自動抽出が完了します。\n詳細は今すぐチェック！`;
-                    } else { // active
-                        script = `まだ転記に時間削られてる？${target}必見！\n「${appName}」なら、${cleanFeature}、瞬時にデータ化完了！\nマニュアル一切不要！このスピード、今すぐ体験してみて！`;
-                    }
-                } else { // male
-                    if (currentTone === 'friendly') {
-                        script = `${target}の皆さん！\n手入力はもう終わりにしませんか？\n「${appName}」なら、${cleanFeature}、データを投げるだけでAIが自動抽出します！\n作業時間をゼロへ！今すぐ試してください！`;
-                    } else if (currentTone === 'business') {
-                        script = `${target}の皆様。\n毎日の無駄な転記作業にお悩みではありませんか？\n「${appName}」なら、${cleanFeature}、データを送るだけで抽出完了です。\n業務効率化を、今すぐ始めましょう。`;
-                    } else { // active
-                        script = `転記作業に時間を使ってないか？${target}は今すぐ注目！\n「${appName}」なら、${cleanFeature}、爆速でデータ化できるぞ！\n面倒な設定はゼロ。今すぐ試してくれ！`;
-                    }
-                }
-
-            } else if (currentDuration === 30) {
-                // 【30秒動画：文字数目安 150〜180文字】
-                if (currentGender === 'female') {
-                    if (currentTone === 'friendly') {
-                        script = `${target}のみなさん！\n毎日のあの面倒な作業、まだ手入力していませんか？\n\n新アプリ「${appName}」なら、${cleanFeature}、データを投げるだけでOK！\n\n面倒な設定は一切不要。AIが空気を読んで、あっという間に自動抽出してくれます。\n面倒くさいを、なくす！今すぐ試してみてね！`;
-                    } else if (currentTone === 'business') {
-                        script = `${target}の皆様へ。\n毎日の非効率な転記作業、未だに手入力に頼っていませんか？\n\n「${appName}」を導入すれば、${cleanFeature}、データを送信するだけで業務が完了します。\n\n難しい初期設定は必要ありません。AIが高精度にデータを抽出します。\n業務効率化の第一歩、ぜひご体験ください。`;
-                    } else { // active
-                        script = `まだ転記作業で疲れてる？${target}は絶対これ使って！\n話題の「${appName}」が、あなたのその面倒な作業を劇的に変えちゃいます！\n\nだって、${cleanFeature}、一瞬で終わるから！\n面倒なマニュアルも設定も全部ポイッ！AI任せで秒速で完了しちゃおう！\n今すぐ試してみて！`;
-                    }
-                } else { // male
-                    if (currentTone === 'friendly') {
-                        script = `${target}の皆さん！\n毎日の大変な転記作業、まだ一つずつ手入力していませんか？\n\n「${appName}」なら、${cleanFeature}、データを投げるだけで解決します！\n\n面倒な枠設定やマニュアルは一切必要ありません。AIが自動で綺麗に読み取ってくれます。\n面倒を今すぐ解消しましょう！ぜひ試してみてください！`;
-                    } else if (currentTone === 'business') {
-                        script = `${target}の皆様へ。\n日々の煩雑な転記・入力作業、まだ手作業で行っていませんか？\n\n「${appName}」は、${cleanFeature}、データを送るだけで自動的にデータ化するシステムです。\n\n事前設定の手間も一切発生しません。AIが自動認識し、迅速なデータ抽出を実現します。\n今すぐ業務の効率化を始めましょう。`;
-                    } else { // active
-                        script = `まだ面倒な入力作業で消耗しているのか？${target}、今すぐ注目してくれ！\n「${appName}」を導入すれば、もう時間にとらわれることはないぞ！\n\nなぜなら、${cleanFeature}、一瞬で片付くからだ！\n細かい設定は一切不要、AIに任せて今すぐ作業効率を最大化しよう！\nまずは試してくれ！`;
-                    }
-                }
-
-            } else if (currentDuration === 45) {
-                // 【45秒動画：文字数目安 220〜270文字】
-                if (currentGender === 'female') {
-                    if (currentTone === 'friendly') {
-                        script = `${target}のみなさん！\n毎日山のようにある書類の山、まだ手入力していませんか？\n「これ転記するだけで1日が終わっちゃう…」そんな悩み、ありますよね。\n\n新アプリ「${appName}」を使えば、その悩みを一気に吹き飛ばせます！\nなんと、${cleanFeature}、データをポイッと投げるだけで大丈夫なんです。\n\n枠組みの登録や難しいシステム設定は一切ありません。AIが自動で内容を判別し、一瞬で整理してくれます！\n面倒くさいを、なくす。あなたも今すぐ体験してみませんか？`;
-                    } else if (currentTone === 'business') {
-                        script = `${target}の皆様へ。\n日々の業務の中で、転記作業や手入力によるデータ作成に時間や労力を奪われていませんか？\n入力ミスによるチェック作業も含め、その「隠れたコスト」は無視できません。\n\nそこでご提案するのが「${appName}」です。\n「${appName}」なら、${cleanFeature}、データを連携するだけで業務プロセスが劇的に改善します。\n\n煩雑なテンプレート登録や初期訓練は一切不要。高機能なAIが素早く的確に自動抽出を行います。\n確実な業務改善を、まずは一度体験してみませんか？`;
-                    } else { // active
-                        script = `ちょっと待って！${target}のみなさん！\nもしかしてまだ、1枚ずつ目をこすりながら手入力してるの！？\n「時間のムダだな」って、気づいてるなら今すぐ行動しましょう！\n\n超おすすめの「${appName}」があれば、もうデータ入力で残業する必要なんてありません！\nだって、${cleanFeature}、データを送るだけで完了できちゃうんです！\n\n面倒なルール設定や学習は全部おまかせ。AIが驚きのスピードで処理を代行します。\n時間と自由を取り戻すために、今すぐ試してみましょう！`;
-                    }
-                } else { // male
-                    if (currentTone === 'friendly') {
-                        script = `${target}の皆さん！\n目の前に積み上がったデータの山、まだ手入力に頼っていませんか？\n「地味で時間がかかる作業、何とかならないかな…」誰もが一度は思うはずです。\n\n「${appName}」があれば、その面倒な作業をすっきり終わらせることができます！\nなぜなら、${cleanFeature}、データを投げるだけで自動処理されるからです。\n\n面倒な初期のフォーマット登録は一切ありません。AIが自動で判別してあっという間に抽出します。\n今日から無駄な作業をゼロにしませんか？まずは気軽にお試しください！`;
-                    } else if (currentTone === 'business') {
-                        script = `${target}の皆様。\n毎日のルーティンとなっているデータ入力や転記作業、手動による対応で貴重なリソースを消耗していませんか？\nそれによる人的な入力エラーや、ダブルチェックの手間は非常に大きな課題です。\n\nこの課題に対し、弊社が提供する「${appName}」が確実なソリューションとなります。\n「${appName}」は、${cleanFeature}、データをアップロードするだけで自動抽出を実現します。\n\n事前の枠設定などの専門知識は不要です。AIが自律的に文書構造を分析し抽出します。\n組織全体の生産性を向上させる第一歩として、ぜひご活用ください。`;
-                    } else { // active
-                        script = `オイオイ、まだ手入力で時間削られてないか？${target}は今すぐ手を止めてくれ！\n「明日やればいいや」と放置できない面倒な作業を、一瞬で終わらせる方法があるぞ！\n\nそれがこの「${appName}」だ！\n${cleanFeature}、データを一発で送るだけで抽出が完了するんだ！\n\n複雑なシステムの調整やマニュアルの読み込みはもう一切要らない！AIに全部任せて、本来やるべき重要な業務に時間を使ってくれ！\n今すぐそのスピードを体感しよう！`;
-                    }
-                }
-            }
-
-            // 出力
-            outputArea.value = script;
-
-            // 文字数カウント (スペースや改行、句読点を含む全体)
-            const length = script.length;
-            
-            // 目標文字数の定義
+            // 目標・制限文字数の定義
             let minChar = 150, maxChar = 180;
             if (currentDuration === 15) {
                 minChar = 70; maxChar = 95;
@@ -386,29 +333,142 @@
                 minChar = 220; maxChar = 270;
             }
 
-            // 進捗バーの更新 (最大目標文字数を100%の基準とする)
-            const percentage = Math.min((length / maxChar) * 100, 100);
+            // --- 18パターンの条件分岐テンプレートを生成 ---
+            function getTemplate(app, tgt, feat) {
+                let script = "";
+                if (currentDuration === 15) {
+                    if (currentGender === 'female') {
+                        if (currentTone === 'friendly') {
+                            script = `${tgt}へ！\n手入力はもう卒業しませんか？\n新アプリ「${app}」なら、${feat}、投げるだけでAIが自動抽出します！\n面倒をなくして効率化！今すぐ試してみてね！`;
+                        } else if (currentTone === 'business') {
+                            script = `${tgt}の皆様へ。\n毎日の非効率な転記作業、まだ手入力していませんか？\n「${app}」なら、${feat}、データを送るだけで自動抽出が完了します。\n詳細は今すぐチェック！`;
+                        } else { // active
+                            script = `まだ転記に時間削られてる？${tgt}必見！\n「${app}」なら、${feat}、瞬時にデータ化完了！\nマニュアル一切不要！このスピード、今すぐ体験してみて！`;
+                        }
+                    } else { // male
+                        if (currentTone === 'friendly') {
+                            script = `${tgt}の皆さん！\n手入力はもう終わりにしませんか？\n「${app}」なら、${feat}、データを投げるだけでAIが自動抽出します！\n作業時間をゼロへ！今すぐ試してください！`;
+                        } else if (currentTone === 'business') {
+                            script = `${tgt}の皆様。\n毎日の無駄な転記作業にお悩みではありませんか？\n「${app}」なら、${feat}、データを送るだけで抽出完了です。\n業務効率化を、今すぐ始めましょう。`;
+                        } else { // active
+                            script = `転記作業に時間を使ってないか？${tgt}は今すぐ注目！\n「${app}」なら、${feat}、爆速でデータ化できるぞ！\n面倒な設定はゼロ。今すぐ試してくれ！`;
+                        }
+                    }
+                } else if (currentDuration === 30) {
+                    if (currentGender === 'female') {
+                        if (currentTone === 'friendly') {
+                            script = `${tgt}のみなさん！\n毎日のあの面倒な作業、まだ手入力していませんか？\n\n新アプリ「${app}」なら、${feat}、データを投げるだけでOK！\n\n面倒な設定は一切不要。AIが空気を読んで、あっという間に自動抽出してくれます。\n面倒くさいを、なくす！今すぐ試してみてね！`;
+                        } else if (currentTone === 'business') {
+                            script = `${tgt}の皆様へ。\n毎日の非効率な転記作業、未だに手入力に頼っていませんか？\n\n「${app}」を導入すれば、${feat}、データを送信するだけで業務が完了します。\n\n難しい初期設定は必要ありません。AIが高精度にデータを抽出します。\n業務効率化の第一歩、ぜひご体験ください。`;
+                        } else { // active
+                            script = `まだ転記作業で疲れてる？${tgt}は絶対これ使って！\n話題の「${app}」が、あなたのその面倒な作業を劇的に変えちゃいます！\n\nだって、${feat}、一瞬で終わるから！\n面倒なマニュアルも設定も全部ポイッ！AI任せで秒速で完了しちゃおう！\n今すぐ試してみて！`;
+                        }
+                    } else { // male
+                        if (currentTone === 'friendly') {
+                            script = `${tgt}の皆さん！\n毎日の大変な転記作業、まだ一つずつ手入力していませんか？\n\n「${app}」なら、${feat}、データを投げるだけで解決します！\n\n面倒な枠設定やマニュアルは一切必要ありません。AIが自動で綺麗に読み取ってくれます。\n面倒を今すぐ解消しましょう！ぜひ試してみてください！`;
+                        } else if (currentTone === 'business') {
+                            script = `${tgt}の皆様へ。\n日々の煩雑な転記・入力作業、まだ手作業で行っていませんか？\n\n「${app}」は、${feat}、データを送るだけで自動的にデータ化するシステムです。\n\n事前設定の手間も一切発生しません。AIが自動認識し、迅速なデータ抽出を実現します。\n今すぐ業務の効率化を始めましょう。`;
+                        } else { // active
+                            script = `まだ面倒な入力作業で消耗しているのか？${tgt}、今すぐ注目してくれ！\n「${app}」を導入すれば、もう時間にとらわれることはないぞ！\n\nなぜなら、${feat}、一瞬で片付くからだ！\n細かい設定は一切不要、AIに任せて今すぐ作業効率を最大化しよう！\nまずは試してくれ！`;
+                        }
+                    }
+                } else if (currentDuration === 45) {
+                    if (currentGender === 'female') {
+                        if (currentTone === 'friendly') {
+                            script = `${tgt}のみなさん！\n毎日山のようにある書類の山、まだ手入力していませんか？\n「これ転記するだけで1日が終わっちゃう…」そんな悩み、ありますよね。\n\n新アプリ「${app}」を使えば、その悩みを一気に吹き飛ばせます！\nなんと、${feat}、データをポイッと投げるだけで大丈夫んです。\n\n枠組みの登録や難しいシステム設定は一切ありません。AIが自動で内容を判別し、一瞬で整理してくれます！\n面倒くさいを、なくす。あなたも今すぐ体験してみませんか？`;
+                        } else if (currentTone === 'business') {
+                            script = `${tgt}の皆様へ。\n日々の業務の中で、転記作業や手入力によるデータ作成に時間や労力を奪われていませんか？\n入力ミスによるチェック作業も含め、その「隠れたコスト」は無視できません。\n\nそこでご提案するのが「${app}」です。\n「${app}」なら、${feat}、データを連携するだけで業務プロセスが劇的に改善します。\n\n煩雑なテンプレート登録や初期訓練は一切不要。高機能なAIが素早く的確に自動抽出を行います。\n確実な業務改善を、まずは一度体験してみませんか？`;
+                        } else { // active
+                            script = `ちょっと待って！${tgt}のみなさん！\nもしかしてまだ、1枚ずつ目をこすりながら手入力してるの！？\n「時間のムダだな」って、気づいてるなら今すぐ行動しましょう！\n\n超おすすめの「${app}」があれば、もうデータ入力で残業する必要なんてありません！\nだって、${feat}、データを送るだけで完了できちゃうんです！\n\n面倒なルール設定や学習は全部おまかせ。AIが驚きのスピードで処理を代行します。\n時間と自由を取り戻すために、今すぐ試してみましょう！`;
+                        }
+                    } else { // male
+                        if (currentTone === 'friendly') {
+                            script = `${tgt}の皆さん！\n目の前に積み上がったデータの山、まだ手入力に頼っていませんか？\n「地味で時間がかかる作業、何とかならないかな…」誰もが一度は思うはずです。\n\n「${app}」があれば、その面倒な作業をすっきり終わらせることができます！\nなぜなら、${feat}、データを投げるだけで自動処理されるからです。\n\n面倒な初期のフォーマット登録は一切ありません。AIが自動で判別してあっという間に抽出します。\n今日から無駄な作業をゼロにしませんか？まずは気軽にお試しください！`;
+                        } else if (currentTone === 'business') {
+                            script = `${tgt}の皆様。\n毎日のルーティンとなっているデータ入力や転記作業、手動による対応で貴重なリソースを消耗していませんか？\nそれによる人的な入力エラーや、ダブルチェックの手間は非常に大きな課題です。\n\nこの課題に対し、弊社が提供する「${app}」が確実なソリューションとなります。\n「${app}」は、${feat}、データをアップロードするだけで自動抽出を実現します。\n\n事前の枠設定などの専門知識は不要です。AIが自律的に文書構造を分析し抽出します。\n組織全体の生産性を向上させる第一歩として、ぜひご活用ください。`;
+                        } else { // active
+                            script = `オイオイ、まだ手入力で時間削られてないか？${tgt}は今すぐ手を止めてくれ！\n「明日やればいいや」と放置できない面倒な作業を、一瞬で終わらせる方法があるぞ！\n\nそれがこの「${app}」だ！\n${feat}、データを一発で送るだけで抽出が完了するんだ！\n\n複雑なシステムの調整やマニュアルの読み込みはもう一切要らない！AIに全部任せて、本来やるべき重要な業務に時間を使ってくれ！\n今すぐそのスピードを体感しよう！`;
+                        }
+                    }
+                }
+                return script;
+            }
+
+            // 一度仮のテンプレートを出力し、文字数を測定
+            let tempScript = getTemplate(appName, target, cleanFeature);
+            let rawLength = tempScript.length;
+
+            // もし入力データが多すぎて最大制限文字数を超えていたら、自動切り詰め（アジャスト）を行う
+            if (rawLength > maxChar) {
+                let overflow = rawLength - maxChar;
+                
+                // 「最大の強み」を削って文字数調整を試みる
+                if (cleanFeature.length > overflow + 5) {
+                    cleanFeature = cleanFeature.slice(0, cleanFeature.length - overflow - 3) + "…";
+                } else {
+                    // それでも足りない場合はターゲット側からも削る
+                    let featureCutAmount = Math.max(0, cleanFeature.length - 10);
+                    cleanFeature = cleanFeature.slice(0, 10) + "…";
+                    overflow -= featureCutAmount;
+                    
+                    if (target.length > overflow + 5) {
+                        target = target.slice(0, target.length - overflow - 3) + "…";
+                    }
+                }
+                // アジャストした文字で再構築
+                tempScript = getTemplate(appName, target, cleanFeature);
+            }
+
+            // 最終決定されたスクリプトを適用
+            outputArea.value = tempScript;
+            const finalLength = tempScript.length;
+
+            // 進捗バーの更新
+            const percentage = Math.min((finalLength / maxChar) * 100, 100);
             gaugeBar.style.width = `${percentage}%`;
 
-            // 文字数評価
-            if (length >= minChar && length <= maxChar) {
-                charCount.innerText = `${length} 文字 (完璧！)`;
+            // 最終文字数の厳格バリデーションチェック
+            if (finalLength >= minChar && finalLength <= maxChar) {
+                // 完全に目標の範囲内
+                charCount.innerText = `${finalLength} 文字 (完璧！)`;
                 charCount.className = "text-xs bg-emerald-100 px-3 py-1 rounded-full text-emerald-600 font-bold";
                 gaugeBar.className = "h-full bg-emerald-400";
                 feedbackText.innerText = `✨ ちょうど ${minChar}〜${maxChar} 文字！${currentDuration}秒動画にベストな長さです！`;
                 feedbackText.className = "text-xs text-emerald-600 font-bold";
-            } else if (length < minChar) {
-                charCount.innerText = `${length} 文字 (少し短いかも)`;
+                
+                // コピーボタンのアンロック
+                warningBanner.classList.add('hidden');
+                copyBtn.classList.remove('clay-btn-disabled');
+                copyBtn.disabled = false;
+                copyBtn.innerHTML = `<span>📋</span> 台本をコピーする`;
+                
+            } else if (finalLength < minChar) {
+                // 短すぎる場合（警告はするが、コピーは許可）
+                charCount.innerText = `${finalLength} 文字 (少し短いかも)`;
                 charCount.className = "text-xs bg-amber-100 px-3 py-1 rounded-full text-amber-600 font-bold";
                 gaugeBar.className = "h-full bg-amber-400";
-                feedbackText.innerText = `💡 ${currentDuration}秒で話すには少し短めです。詳細やメリットを1文付け足すと良くなります。`;
-                feedbackText.className = "text-xs text-amber-500";
+                feedbackText.innerText = `💡 ${currentDuration}秒で話すには少し短めです。詳細や強みをもう数文字付け足すと完璧になります。`;
+                feedbackText.className = "text-xs text-amber-500 font-bold";
+                
+                warningBanner.classList.add('hidden');
+                copyBtn.classList.remove('clay-btn-disabled');
+                copyBtn.disabled = false;
+                copyBtn.innerHTML = `<span>📋</span> 台本をコピーする`;
+                
             } else {
-                charCount.innerText = `${length} 文字 (少し長いかも)`;
+                // 想定外の超過（もしアジャストをすり抜けて超えた場合用のセーフティロック）
+                const overCount = finalLength - maxChar;
+                charCount.innerText = `${finalLength} 文字 (${overCount}文字超過！エラー)`;
                 charCount.className = "text-xs bg-rose-100 px-3 py-1 rounded-full text-rose-600 font-bold";
-                gaugeBar.className = "h-full bg-rose-400";
-                feedbackText.innerText = `⚠️ ${maxChar}文字を超えると話すペースが早くなってしまいます。少しスッキリ削りましょう。`;
-                feedbackText.className = "text-xs text-rose-500";
+                gaugeBar.className = "h-full bg-rose-500";
+                feedbackText.innerText = `⚠️ ${maxChar}文字制限を完全にオーバーしています！これでは入り切りません。`;
+                feedbackText.className = "text-xs text-rose-500 font-bold";
+                
+                // 強制ロック！
+                warningBanner.classList.remove('hidden');
+                copyBtn.classList.add('clay-btn-disabled');
+                copyBtn.disabled = true;
+                copyBtn.innerHTML = `❌ 文字オーバーのためロック中`;
             }
         }
 
