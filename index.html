@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ショート動画ナレーションメーカー</title>
+    <!-- Tailwind CSS (軽量スタイル調整用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (かわいいフォント) -->
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Nunito:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kosugi Maru', 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #FFE5EC 0%, #E8F0FE 100%);
+            min-height: 100vh;
+        }
+        /* クレイモーフィズム風のぷにぷにスタイル */
+        .clay-card {
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 
+                inset 4px 4px 8px rgba(255, 255, 255, 0.9),
+                inset -4px -4px 8px rgba(0, 0, 0, 0.05),
+                8px 12px 24px rgba(0, 0, 0, 0.05);
+            border: 4px solid #ffffff;
+        }
+        .clay-input {
+            background: #F7FAFC;
+            border-radius: 20px;
+            border: 3px solid #E2E8F0;
+            box-shadow: 
+                inset 2px 2px 5px rgba(0,0,0,0.03),
+                2px 2px 4px rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+        }
+        .clay-input:focus {
+            outline: none;
+            border-color: #93C5FD;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.3);
+        }
+        
+        /* 可愛い選択ボタンの共通スタイル */
+        .option-btn {
+            background: #F1F5F9;
+            border: 3px solid #E2E8F0;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+        }
+        /* 秒数選択（ピンク系） */
+        .sec-btn.active {
+            background: linear-gradient(135deg, #FFD6E0 0%, #FFB3C6 100%);
+            border-color: #FF85A1;
+            box-shadow: 0 4px 8px rgba(255, 133, 161, 0.2);
+            color: #C9184A;
+        }
+        /* 性別選択（ブルー・パープル系） */
+        .gender-btn.active {
+            background: linear-gradient(135deg, #E0EBFF 0%, #C4DAFF 100%);
+            border-color: #60A5FA;
+            box-shadow: 0 4px 8px rgba(96, 165, 250, 0.2);
+            color: #1E40AF;
+        }
+        /* 雰囲気選択（イエロー・グリーン系） */
+        .tone-btn.active {
+            background: linear-gradient(135deg, #E6FFFA 0%, #B2F5EA 100%);
+            border-color: #319795;
+            box-shadow: 0 4px 8px rgba(49, 151, 149, 0.2);
+            color: #234E52;
+        }
+
+        .clay-btn-secondary {
+            background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%);
+            color: white;
+            border-radius: 20px;
+            box-shadow: 
+                inset 3px 3px 6px rgba(255, 255, 255, 0.4),
+                0 6px 12px rgba(96, 165, 250, 0.3);
+            transition: all 0.2s ease;
+        }
+        .clay-btn-secondary:hover {
+            transform: translateY(1px);
+            box-shadow: 
+                inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+                0 3px 6px rgba(96, 165, 250, 0.3);
+        }
+
+        /* ふわふわ浮かぶアニメーション */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating-icon {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        /* カスタムトースト表示用のCSS */
+        .toast-notify {
+            visibility: hidden;
+            min-width: 320px;
+            margin-left: -160px;
+            text-align: center;
+            border-radius: 20px;
+            position: fixed;
+            z-index: 999;
+            left: 50%;
+            bottom: 30px;
+            font-size: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: visibility 0s, opacity 0.5s linear;
+            opacity: 0;
+        }
+        .toast-notify.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col justify-between">
+
+    <!-- ヘッダー -->
+    <header class="text-center mb-6">
+        <div class="inline-block bg-white/60 backdrop-blur-sm px-6 py-2 rounded-full text-xs md:text-sm text-slate-600 font-bold shadow-sm">
+            考えるを、ひとりにしない。面倒くさいを、なくす。
+        </div>
+        <h1 class="text-2xl md:text-3xl font-black text-slate-700 mt-4 flex items-center justify-center gap-2">
+            <span class="floating-icon text-3xl">🎤</span>
+            ショート動画ナレーションメーカー
+        </h1>
+        <p class="text-xs md:text-sm text-slate-500 mt-1">15秒・30秒・45秒や、女性・男性の切り替えにも完璧に対応した最新版ツールです✨</p>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch mb-8">
+        
+        <!-- 入力フォーム側（左） -->
+        <div class="clay-card p-6 md:p-8 flex flex-col justify-between space-y-5">
+            <div>
+                <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+                    <span>✏️</span> 情報をうめてみてね（自動で台本が作られるよ！）
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-600">① アプリ・サービス名</label>
+                            <input type="text" id="appName" oninput="buildNarration()" class="w-full p-3 clay-input text-sm font-bold" placeholder="例：みっけOCR" value="みっけOCR">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-600">② 話者の性別（言葉遣い）</label>
+                            <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-600 h-[48px]">
+                                <button onclick="setGender('female')" id="gender-female" class="option-btn gender-btn active flex items-center justify-center gap-1">
+                                    👩‍🦰 女性
+                                </button>
+                                <button onclick="setGender('male')" id="gender-male" class="option-btn gender-btn flex items-center justify-center gap-1">
+                                    🧑‍🦱 男性
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-600">③ ターゲット（誰のどんな悩み？）</label>
+                        <input type="text" id="target" oninput="buildNarration()" class="w-full p-3 clay-input text-sm" placeholder="例：毎日の転記作業に追われている経営者" value="毎日の転記作業に追われている経営者">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-600">④ 最大の強み・メリット</label>
+                        <textarea id="feature" oninput="buildNarration()" rows="2" class="w-full p-3 clay-input text-sm" placeholder="例：面倒な枠設定は一切不要、AIが空気を読んで30秒で自動抽出するから">枠設定は一切不要、AIが空気を読んで30秒で自動抽出するから</textarea>
+                    </div>
+
+                    <!-- 長さ選択 -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-600">⑤ ナレーションの長さ（秒数）</label>
+                        <div class="grid grid-cols-3 gap-2 text-xs font-bold text-slate-600">
+                            <button onclick="setDuration(15)" id="sec-15" class="option-btn sec-btn py-3">
+                                ⏱️ 15秒動画<br>(約70〜95文字)
+                            </button>
+                            <button onclick="setDuration(30)" id="sec-30" class="option-btn sec-btn py-3 active">
+                                🎬 30秒動画<br>(約150〜180文字)
+                            </button>
+                            <button onclick="setDuration(45)" id="sec-45" class="option-btn sec-btn py-3">
+                                📢 45秒動画<br>(約220〜270文字)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- トーン選択 -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-600">⑥ どんな声・雰囲気でいく？</label>
+                        <div class="grid grid-cols-3 gap-2 text-xs font-bold text-slate-600">
+                            <button onclick="setTone('friendly')" id="tone-friendly" class="option-btn tone-btn py-3 active">
+                                🌸 親しみやすい<br>(ヒナタさん等向け)
+                            </button>
+                            <button onclick="setTone('business')" id="tone-business" class="option-btn tone-btn py-3">
+                                💼 きっちり・誠実<br>(お仕事向け)
+                            </button>
+                            <button onclick="setTone('active')" id="tone-active" class="option-btn tone-btn py-3">
+                                ⚡ スピード感<br>(元気・アクティブ)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 出力結果側（右） -->
+        <div class="clay-card p-6 md:p-8 flex flex-col justify-between space-y-4 min-h-[480px]">
+            <div>
+                <h2 class="text-lg font-bold text-slate-700 flex items-center justify-between mb-3">
+                    <span class="flex items-center gap-2"><span>✨</span> 完成した台本</span>
+                    <span id="charCount" class="text-xs bg-emerald-100 px-3 py-1 rounded-full text-emerald-600 font-bold">0 文字</span>
+                </h2>
+                
+                <!-- 文字数インジケーター -->
+                <div id="gauge" class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
+                    <div id="gaugeBar" class="h-full bg-emerald-400" style="width: 0%;"></div>
+                </div>
+                
+                <p id="feedbackText" class="text-xs text-slate-400 mb-2">※秒数に合わせて目標文字数が自動で切り替わります！</p>
+            </div>
+
+            <!-- 結果表示エリア -->
+            <textarea id="outputArea" class="w-full flex-1 p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-blue-300 leading-relaxed resize-none" readonly></textarea>
+
+            <button onclick="copyToClipboard()" class="w-full py-3 text-sm font-bold clay-btn-secondary mt-2 flex items-center justify-center gap-2">
+                <span>📋</span> 台本をコピーする
+            </button>
+        </div>
+
+    </main>
+
+    <!-- 画面内カスタムトースト通知（alertの代わり） -->
+    <div id="customToast" class="toast-notify bg-slate-800 text-white p-4 font-bold rounded-2xl">
+        メッセージがここに入ります 🎈
+    </div>
+
+    <!-- フッター -->
+    <footer class="text-center text-xs text-slate-400 mt-auto pt-4 border-t border-slate-200/60">
+        面倒くさいを、なくす。 | © Smile Plus Consulting
+    </footer>
+
+    <!-- ロジックスクリプト -->
+    <script>
+        // 現在の選択状態
+        let currentDuration = 30; // 15, 30, 45
+        let currentGender = 'female'; // 'female', 'male'
+        let currentTone = 'friendly'; // 'friendly', 'business', 'active'
+
+        // トークメッセージを表示する可愛いポップアップ関数（alert排除のため）
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('customToast');
+            toast.innerText = message;
+            
+            if (isError) {
+                toast.style.background = 'linear-gradient(135deg, #FF85A1 0%, #FF6B8B 100%)';
+            } else {
+                toast.style.background = 'linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%)';
+            }
+            
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function setDuration(duration) {
+            currentDuration = duration;
+            document.querySelectorAll('.sec-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`sec-${duration}`).classList.add('active');
+            
+            buildNarration();
+            showToast(`長さを「${duration}秒動画」に設定しました！⏱️`);
+        }
+
+        function setGender(gender) {
+            currentGender = gender;
+            document.querySelectorAll('.gender-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`gender-${gender}`).classList.add('active');
+            
+            buildNarration();
+            showToast(`話し言葉を「${gender === 'female' ? '女性アバター向け' : '男性アバター向け'}」に変更しました！🤖`);
+        }
+
+        function setTone(tone) {
+            currentTone = tone;
+            document.querySelectorAll('.tone-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tone-${tone}`).classList.add('active');
+            
+            buildNarration();
+            showToast(`雰囲気を「${tone === 'friendly' ? '親しみやすい' : tone === 'business' ? 'きっちり・誠実' : 'スピード感'}」に切り替えました！🌸`);
+        }
+
+        function buildNarration() {
+            const appName = document.getElementById('appName').value.trim() || '〇〇';
+            const target = document.getElementById('target').value.trim() || 'お仕事に追われるあなた';
+            const feature = document.getElementById('feature').value.trim() || 'とにかく素早く解決するから';
+            const outputArea = document.getElementById('outputArea');
+            const charCount = document.getElementById('charCount');
+            const gaugeBar = document.getElementById('gaugeBar');
+            const feedbackText = document.getElementById('feedbackText');
+
+            // 入力データの文末を自然な接続語に最適化する
+            let cleanFeature = feature.replace(/[だから|から|ので]+$/, "");
+
+            let script = "";
+
+            // --- 18パターンの条件分岐テンプレート ---
+
+            if (currentDuration === 15) {
+                // 【15秒動画：文字数目安 70〜95文字】
+                if (currentGender === 'female') {
+                    if (currentTone === 'friendly') {
+                        script = `${target}へ！\n手入力はもう卒業しませんか？\n新アプリ「${appName}」なら、${cleanFeature}、投げるだけでAIが自動抽出します！\n面倒をなくして効率化！今すぐ試してみてね！`;
+                    } else if (currentTone === 'business') {
+                        script = `${target}の皆様へ。\n毎日の非効率な転記作業、まだ手入力していませんか？\n「${appName}」なら、${cleanFeature}、データを送るだけで自動抽出が完了します。\n詳細は今すぐチェック！`;
+                    } else { // active
+                        script = `まだ転記に時間削られてる？${target}必見！\n「${appName}」なら、${cleanFeature}、瞬時にデータ化完了！\nマニュアル一切不要！このスピード、今すぐ体験してみて！`;
+                    }
+                } else { // male
+                    if (currentTone === 'friendly') {
+                        script = `${target}の皆さん！\n手入力はもう終わりにしませんか？\n「${appName}」なら、${cleanFeature}、データを投げるだけでAIが自動抽出します！\n作業時間をゼロへ！今すぐ試してください！`;
+                    } else if (currentTone === 'business') {
+                        script = `${target}の皆様。\n毎日の無駄な転記作業にお悩みではありませんか？\n「${appName}」なら、${cleanFeature}、データを送るだけで抽出完了です。\n業務効率化を、今すぐ始めましょう。`;
+                    } else { // active
+                        script = `転記作業に時間を使ってないか？${target}は今すぐ注目！\n「${appName}」なら、${cleanFeature}、爆速でデータ化できるぞ！\n面倒な設定はゼロ。今すぐ試してくれ！`;
+                    }
+                }
+
+            } else if (currentDuration === 30) {
+                // 【30秒動画：文字数目安 150〜180文字】
+                if (currentGender === 'female') {
+                    if (currentTone === 'friendly') {
+                        script = `${target}のみなさん！\n毎日のあの面倒な作業、まだ手入力していませんか？\n\n新アプリ「${appName}」なら、${cleanFeature}、データを投げるだけでOK！\n\n面倒な設定は一切不要。AIが空気を読んで、あっという間に自動抽出してくれます。\n面倒くさいを、なくす！今すぐ試してみてね！`;
+                    } else if (currentTone === 'business') {
+                        script = `${target}の皆様へ。\n毎日の非効率な転記作業、未だに手入力に頼っていませんか？\n\n「${appName}」を導入すれば、${cleanFeature}、データを送信するだけで業務が完了します。\n\n難しい初期設定は必要ありません。AIが高精度にデータを抽出します。\n業務効率化の第一歩、ぜひご体験ください。`;
+                    } else { // active
+                        script = `まだ転記作業で疲れてる？${target}は絶対これ使って！\n話題の「${appName}」が、あなたのその面倒な作業を劇的に変えちゃいます！\n\nだって、${cleanFeature}、一瞬で終わるから！\n面倒なマニュアルも設定も全部ポイッ！AI任せで秒速で完了しちゃおう！\n今すぐ試してみて！`;
+                    }
+                } else { // male
+                    if (currentTone === 'friendly') {
+                        script = `${target}の皆さん！\n毎日の大変な転記作業、まだ一つずつ手入力していませんか？\n\n「${appName}」なら、${cleanFeature}、データを投げるだけで解決します！\n\n面倒な枠設定やマニュアルは一切必要ありません。AIが自動で綺麗に読み取ってくれます。\n面倒を今すぐ解消しましょう！ぜひ試してみてください！`;
+                    } else if (currentTone === 'business') {
+                        script = `${target}の皆様へ。\n日々の煩雑な転記・入力作業、まだ手作業で行っていませんか？\n\n「${appName}」は、${cleanFeature}、データを送るだけで自動的にデータ化するシステムです。\n\n事前設定の手間も一切発生しません。AIが自動認識し、迅速なデータ抽出を実現します。\n今すぐ業務の効率化を始めましょう。`;
+                    } else { // active
+                        script = `まだ面倒な入力作業で消耗しているのか？${target}、今すぐ注目してくれ！\n「${appName}」を導入すれば、もう時間にとらわれることはないぞ！\n\nなぜなら、${cleanFeature}、一瞬で片付くからだ！\n細かい設定は一切不要、AIに任せて今すぐ作業効率を最大化しよう！\nまずは試してくれ！`;
+                    }
+                }
+
+            } else if (currentDuration === 45) {
+                // 【45秒動画：文字数目安 220〜270文字】
+                if (currentGender === 'female') {
+                    if (currentTone === 'friendly') {
+                        script = `${target}のみなさん！\n毎日山のようにある書類の山、まだ手入力していませんか？\n「これ転記するだけで1日が終わっちゃう…」そんな悩み、ありますよね。\n\n新アプリ「${appName}」を使えば、その悩みを一気に吹き飛ばせます！\nなんと、${cleanFeature}、データをポイッと投げるだけで大丈夫なんです。\n\n枠組みの登録や難しいシステム設定は一切ありません。AIが自動で内容を判別し、一瞬で整理してくれます！\n面倒くさいを、なくす。あなたも今すぐ体験してみませんか？`;
+                    } else if (currentTone === 'business') {
+                        script = `${target}の皆様へ。\n日々の業務の中で、転記作業や手入力によるデータ作成に時間や労力を奪われていませんか？\n入力ミスによるチェック作業も含め、その「隠れたコスト」は無視できません。\n\nそこでご提案するのが「${appName}」です。\n「${appName}」なら、${cleanFeature}、データを連携するだけで業務プロセスが劇的に改善します。\n\n煩雑なテンプレート登録や初期訓練は一切不要。高機能なAIが素早く的確に自動抽出を行います。\n確実な業務改善を、まずは一度体験してみませんか？`;
+                    } else { // active
+                        script = `ちょっと待って！${target}のみなさん！\nもしかしてまだ、1枚ずつ目をこすりながら手入力してるの！？\n「時間のムダだな」って、気づいてるなら今すぐ行動しましょう！\n\n超おすすめの「${appName}」があれば、もうデータ入力で残業する必要なんてありません！\nだって、${cleanFeature}、データを送るだけで完了できちゃうんです！\n\n面倒なルール設定や学習は全部おまかせ。AIが驚きのスピードで処理を代行します。\n時間と自由を取り戻すために、今すぐ試してみましょう！`;
+                    }
+                } else { // male
+                    if (currentTone === 'friendly') {
+                        script = `${target}の皆さん！\n目の前に積み上がったデータの山、まだ手入力に頼っていませんか？\n「地味で時間がかかる作業、何とかならないかな…」誰もが一度は思うはずです。\n\n「${appName}」があれば、その面倒な作業をすっきり終わらせることができます！\nなぜなら、${cleanFeature}、データを投げるだけで自動処理されるからです。\n\n面倒な初期のフォーマット登録は一切ありません。AIが自動で判別してあっという間に抽出します。\n今日から無駄な作業をゼロにしませんか？まずは気軽にお試しください！`;
+                    } else if (currentTone === 'business') {
+                        script = `${target}の皆様。\n毎日のルーティンとなっているデータ入力や転記作業、手動による対応で貴重なリソースを消耗していませんか？\nそれによる人的な入力エラーや、ダブルチェックの手間は非常に大きな課題です。\n\nこの課題に対し、弊社が提供する「${appName}」が確実なソリューションとなります。\n「${appName}」は、${cleanFeature}、データをアップロードするだけで自動抽出を実現します。\n\n事前の枠設定などの専門知識は不要です。AIが自律的に文書構造を分析し抽出します。\n組織全体の生産性を向上させる第一歩として、ぜひご活用ください。`;
+                    } else { // active
+                        script = `オイオイ、まだ手入力で時間削られてないか？${target}は今すぐ手を止めてくれ！\n「明日やればいいや」と放置できない面倒な作業を、一瞬で終わらせる方法があるぞ！\n\nそれがこの「${appName}」だ！\n${cleanFeature}、データを一発で送るだけで抽出が完了するんだ！\n\n複雑なシステムの調整やマニュアルの読み込みはもう一切要らない！AIに全部任せて、本来やるべき重要な業務に時間を使ってくれ！\n今すぐそのスピードを体感しよう！`;
+                    }
+                }
+            }
+
+            // 出力
+            outputArea.value = script;
+
+            // 文字数カウント (スペースや改行、句読点を含む全体)
+            const length = script.length;
+            
+            // 目標文字数の定義
+            let minChar = 150, maxChar = 180;
+            if (currentDuration === 15) {
+                minChar = 70; maxChar = 95;
+            } else if (currentDuration === 45) {
+                minChar = 220; maxChar = 270;
+            }
+
+            // 進捗バーの更新 (最大目標文字数を100%の基準とする)
+            const percentage = Math.min((length / maxChar) * 100, 100);
+            gaugeBar.style.width = `${percentage}%`;
+
+            // 文字数評価
+            if (length >= minChar && length <= maxChar) {
+                charCount.innerText = `${length} 文字 (完璧！)`;
+                charCount.className = "text-xs bg-emerald-100 px-3 py-1 rounded-full text-emerald-600 font-bold";
+                gaugeBar.className = "h-full bg-emerald-400";
+                feedbackText.innerText = `✨ ちょうど ${minChar}〜${maxChar} 文字！${currentDuration}秒動画にベストな長さです！`;
+                feedbackText.className = "text-xs text-emerald-600 font-bold";
+            } else if (length < minChar) {
+                charCount.innerText = `${length} 文字 (少し短いかも)`;
+                charCount.className = "text-xs bg-amber-100 px-3 py-1 rounded-full text-amber-600 font-bold";
+                gaugeBar.className = "h-full bg-amber-400";
+                feedbackText.innerText = `💡 ${currentDuration}秒で話すには少し短めです。詳細やメリットを1文付け足すと良くなります。`;
+                feedbackText.className = "text-xs text-amber-500";
+            } else {
+                charCount.innerText = `${length} 文字 (少し長いかも)`;
+                charCount.className = "text-xs bg-rose-100 px-3 py-1 rounded-full text-rose-600 font-bold";
+                gaugeBar.className = "h-full bg-rose-400";
+                feedbackText.innerText = `⚠️ ${maxChar}文字を超えると話すペースが早くなってしまいます。少しスッキリ削りましょう。`;
+                feedbackText.className = "text-xs text-rose-500";
+            }
+        }
+
+        function copyToClipboard() {
+            const outputArea = document.getElementById('outputArea');
+            if (!outputArea.value) {
+                showToast('まだ台本ができていないよ！', true);
+                return;
+            }
+            outputArea.select();
+            
+            // iFrame環境に対応したコピークリップボード処理
+            try {
+                document.execCommand('copy');
+                showToast(`台本をコピーしたよ！HeyGenの「Script」欄にペーストしてね！🎬✨`);
+            } catch (err) {
+                navigator.clipboard.writeText(outputArea.value);
+                showToast(`台本をコピーしたよ！HeyGenの「Script」欄にペーストしてね！🎬✨`);
+            }
+        }
+
+        // 初期起動時に自動で一度作成
+        window.onload = function() {
+            buildNarration();
+        };
+    </script>
+</body>
+</html>
